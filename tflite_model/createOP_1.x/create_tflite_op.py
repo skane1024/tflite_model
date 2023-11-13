@@ -80,7 +80,7 @@ if __name__ == '__main__':
     print("output.shape: ")
     print(output.get_shape())
 
-    
+
 
 '''
 std_dev = 1.0 / scale

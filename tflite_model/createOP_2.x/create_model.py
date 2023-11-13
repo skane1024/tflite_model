@@ -1,23 +1,27 @@
 import tensorflow as tf
 import numpy as np
 
+# 创建一个简单的模型
+model = tf.keras.Sequential([
+    tf.keras.layers.Dense(64, activation='relu', input_shape=(10,)),
+    tf.keras.layers.Dense(1, activation='sigmoid')
+])
+
+# # 编译模型
+# model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+# # 训练模型
+# model.fit(x_train, y_train, epochs=10)
+
+# 保存模型
+tf.keras.models.save_model(model, 'my_model.h5' , save_format="h5")
 
 
-input_shape = [1,224,224,3]
-pool_size = (2, 2)
-strides = [3,3]
-padding =  'valid'
 
 
+input_shape = [1,10]
 
-inputs = tf.keras.Input(shape=input_shape[1:],batch_size=input_shape[0])
-outputs = tf.keras.layers.AvgPool2D(pool_size = pool_size,strides = strides,  padding = padding)(inputs)
-model = tf.keras.Model(inputs=inputs, outputs=outputs)
-# Print summary.
-model.summary()
-# Save model and weights in a h5 file, then load again using tf.keras.
-model.save('avgpool.h5')
-model = tf.keras.models.load_model('avgpool.h5', compile=False)
+model = tf.keras.models.load_model('my_model.h5', compile=False)
 # Converting a tf.Keras model to a TensorFlow Lite model.
 converter = tf.lite.TFLiteConverter.from_keras_model(model)
 converter.optimizations = [tf.lite.Optimize.OPTIMIZE_FOR_SIZE]
@@ -34,5 +38,5 @@ converter.representative_dataset = tf.lite.RepresentativeDataset(input_gen)
 tflite_model = converter.convert()
 
 # Save the TF Lite model.
-with tf.io.gfile.GFile('avgpool.tflite', 'wb') as f:
+with tf.io.gfile.GFile('model.tflite', 'wb') as f:
   f.write(tflite_model)
