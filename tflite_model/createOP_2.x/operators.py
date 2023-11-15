@@ -6,43 +6,47 @@ import tensorflow as tf
 
 
 
-def create_relu(input_shape, save_path = "model/"):
-  inputs = tf.keras.Input(shape=input_shape[1:],batch_size=input_shape[0])
-  outputs = tf.keras.activations.relu(inputs)
-  model = tf.keras.Model(inputs=inputs, outputs=outputs)
-  model.summary()
-  # Save model and weights in a h5 file, then load again using tf.keras.
-  save_model_path = os.path.join(save_path,f"relu_{list_to_string(input_shape)}.h5")
-  model.save(save_model_path)
-  quant_model(save_model_path, input_shape)
-  #输入输出量化参数不一致TODO
-
-  
-# create_relu(input_shape = (1,300,300,2))
-
-
-
-
-def create_relu6(input_shape, save_path = "model/"):
+def create_activation(input_shape, activation_type, save_path = "./model/"):
     inputs = tf.keras.Input(shape=input_shape[1:],batch_size=input_shape[0])
-    outputs = tf.keras.activations.relu6(inputs)
+    if activation_type == "relu":
+        outputs = tf.keras.activations.relu(inputs)
+    elif activation_type == "tanh":
+        outputs = tf.keras.activations.tanh(inputs)
+    elif activation_type == "logistic":
+        outputs = tf.keras.activations.sigmoid(inputs)
+    elif activation_type == "softmax":
+        outputs = tf.keras.activations.softmax(inputs)
+    elif activation_type == "hard_sigmoid":
+        outputs = tf.keras.activations.hard_sigmoid(inputs)
+        
     model = tf.keras.Model(inputs=inputs, outputs=outputs)
     model.summary()
     # Save model and weights in a h5 file, then load again using tf.keras.
-    save_model_path = os.path.join(save_path,f"relu6_{list_to_string(input_shape)}.h5")
+    save_model_path = os.path.join(save_path,f"{activation_type}_{to_str(input_shape)}.h5")
     model.save(save_model_path)
     quant_model(save_model_path, input_shape)
+    #输入输出量化参数不一致TODO
+
+    
+    
+# create_activation(input_shape = (1,300,300,2),activation_type = "relu")
+# create_activation(input_shape = (1,300,300,2),activation_type = "tanh")
+# create_activation(input_shape = (1,300,300,2),activation_type = "logistic")
+# create_activation(input_shape = (1,300,300,2),activation_type = "softmax")
+# create_activation(input_shape = (1,300,300,2),activation_type = "hard_sigmoid")
 
 
 
 
-def create_reshape(input_shape,output_shape, save_path = "model/"):
+
+
+def create_reshape(input_shape,output_shape, save_path = "./model/"):
     inputs = tf.keras.Input(shape=input_shape[1:],batch_size=input_shape[0])
     outputs = tf.reshape(inputs, output_shape)
     model = tf.keras.Model(inputs=inputs, outputs=outputs)
     model.summary()
     # Save model and weights in a h5 file, then load again using tf.keras.
-    save_model_path = os.path.join(save_path,f"reshape_in_{list_to_string(input_shape)}_out_{list_to_string(input_shape)}.h5")
+    save_model_path = os.path.join(save_path,f"reshape_in_{to_str(input_shape)}_out_{to_str(input_shape)}.h5")
     model.save(save_model_path)
     quant_model(save_model_path, input_shape)
 
@@ -58,7 +62,7 @@ def create_avg_pool2d(input_shape,pool_size,strides,padding,save_path = "model/"
     # Print summary.
     model.summary()
      # Save model and weights in a h5 file, then load again using tf.keras.
-    save_model_path = os.path.join(save_path,f"avgpool_in_{list_to_string(input_shape)}_pool_size_{list_to_string(pool_size)}.h5")
+    save_model_path = os.path.join(save_path,f"avgpool_in_{to_str(input_shape)}_pool_size_{to_str(pool_size)}.h5")
     model.save(save_model_path)
     quant_model(save_model_path, input_shape)
 
@@ -76,7 +80,7 @@ def create_transpose(input_shape,permute, save_path = "model/"):
     # Print summary.
     model.summary()
      # Save model and weights in a h5 file, then load again using tf.keras.
-    save_model_path = os.path.join(save_path,f"transpose_in_{list_to_string(input_shape)}_permute_{list_to_string(permute)}.h5")
+    save_model_path = os.path.join(save_path,f"transpose_in_{to_str(input_shape)}_permute_{to_str(permute)}.h5")
     model.save(save_model_path)
     quant_model(save_model_path, input_shape)
     
@@ -96,7 +100,7 @@ def create_conv(input_shape,filter,strides,padding, save_path="model/"):
     # Print summary.
     model.summary()
     # Save model and weights in a h5 file, then load again using tf.keras.
-    save_model_path = os.path.join(save_path,f"conv_in_{list_to_string(input_shape)}_filter_{list_to_string(filter)}.h5")
+    save_model_path = os.path.join(save_path,f"conv_in_{to_str(input_shape)}_filter_{to_str(filter)}.h5")
     model.save(save_model_path)
     quant_model(save_model_path, input_shape)
 
@@ -110,12 +114,6 @@ def create_fc(input_shape,filter):
     output_names = ["output"]
     modelpath="./model/model"
 
-    
-
-
-
-
-
 
 def create_mean(input_shape,axis,keepdims = True):
     input_names = ["input"]
@@ -123,6 +121,14 @@ def create_mean(input_shape,axis,keepdims = True):
     modelpath="./model/model"
     
 
+
+def create_fc(input_shape,weight_shape):
+    input_names = ["input"]
+    output_names = ["output"]
+    modelpath="./model/model"
+    inputs = tf.keras.Input(shape=(3,))
+    outputs = tf.keras.layers.Dense(4, activation=tf.nn.relu)(inputs)
+    model = tf.keras.Model(inputs=inputs, outputs=outputs)
 
 
 def create_stride_slice(input_shape,begin,end,stride):
@@ -169,13 +175,22 @@ def create_resize(input_shape,block_size):
 
 
 
-def create_add(input_shape1,input_shape2, input_2_constant=False):
+def create_add(input_shape1,input_shape2, input_2_constant=False, save_path="model/"):
     input_names = ["input_1", "input_2"]
     output_names = ["output"]
     modelpath="./model/model"
+    input1 = tf.keras.Input(shape=input_shape1[1:],batch_size=input_shape1[0])
+    input2 = tf.keras.Input(shape=input_shape2,batch_size=input_shape1[0])
+    outputs = tf.add(input1, input2)
+    model = tf.keras.Model(inputs=[input1,input2], outputs=outputs)
+    model.summary()
+    # Save model and weights in a h5 file, then load again using tf.keras.
+    save_model_path = os.path.join(save_path,f"add_in1_{to_str(input_shape1)}_in2_{to_str(input_shape2)}.h5")
+    model.save(save_model_path)
+    
    
 
-
+# create_add(input_shape1 = (1,32,32,3),input_shape2 = (1,3))
 
 
 def create_sub(input_shape1,input_shape2, input_2_constant=False):
@@ -210,12 +225,12 @@ def create_stride_slice(input_shapes,begin, end,stride, save_path = "model/"):
     
     model.summary()
     # Save model and weights in a h5 file, then load again using tf.keras.
-    save_model_path = os.path.join(save_path,f"stride_slice_begin_{list_to_string(begin)}_end_{list_to_string(end)}_stride_{list_to_string(stride)}_.h5")
+    save_model_path = os.path.join(save_path,f"stride_slice_begin_{to_str(begin)}_end_{to_str(end)}_stride_{to_str(stride)}_.h5")
     model.save(save_model_path)
     quant_model(save_model_path, input_shapes)
 
 
-create_stride_slice((1,32,32,3),[0,0,0,0],[1,20,20,3],[1,1,1,1])
+# create_stride_slice((1,32,32,3),[0,0,0,0],[1,20,20,3],[1,1,1,1])
 
 
 
